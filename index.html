@@ -98,7 +98,7 @@
             document.getElementById("resultado").innerText = "Código escaneado: " + qrCodeMessage;
 
             // Enviar el código QR a la API de Google Apps Script
-            fetch("https://script.google.com/macros/s/AKfycbxVYafohnI8efNJ9jkAizZQ_W8StXNH7KYtUl6fPl79FvfOUBcMar6QVqtYb1y7fw4b/exec?codigo=" + encodeURIComponent(qrCodeMessage))
+            fetch("https://script.google.com/macros/s/AKfycbykaxHAN4Vh715fBDarF6ltVZbIOgwIoiHHMPIfwEWBbSCnP1k5evgV2EaMH_PmrCwX/exec?codigo=" + encodeURIComponent(qrCodeMessage))
                 .then(response => response.text())
                 .then(data => {
                     document.getElementById("resultado").innerText = data;
