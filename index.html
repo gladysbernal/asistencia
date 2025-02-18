@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escáner QR - Registro de Asistencia</title>
+    <!-- Librería HTML5 QR Code -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+        #reader {
+            width: 300px;
+            margin: auto;
+        }
+        #resultado {
+            font-size: 18px;
+            margin-top: 10px;
+        }
+        button {
+            padding: 10px;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Escanea tu Código QR</h2>
+    
+    <!-- Botón para iniciar el escáner manualmente -->
+    <button onclick="iniciarEscaner()">Activar Cámara</button>
+    
+    <!-- Contenedor donde se mostrará la cámara -->
+    <div id="reader"></div>
+
+    <!-- Resultado del escaneo -->
+    <p id="resultado">Escanea un código QR para registrar la asistencia.</p>
+
+    <script>
+        let scanner;
+        
+        function iniciarEscaner() {
+            Html5Qrcode.getCameras().then(cameras => {
+                if (cameras && cameras.length) {
+                    // Seleccionar la primera cámara disponible
+                    let cameraId = cameras[0].id;
+                    scanner = new Html5Qrcode("reader");
+
+                    scanner.start(
+                        cameraId,
+                        {
+                            fps: 10, // Velocidad de escaneo (10 cuadros por segundo)
+                            qrbox: { width: 250, height: 250 } // Área de escaneo
+                        },
+                        onScanSuccess,
+                        onScanError
+                    ).catch(error => {
+                        console.error("Error al iniciar escáner:", error);
+                        document.getElementById("resultado").innerText = "Error al acceder a la cámara. Asegúrate de permitir el acceso.";
+                    });
+                } else {
+                    document.getElementById("resultado").innerText = "No se encontraron cámaras en el dispositivo.";
+                }
+            }).catch(error => {
+                console.error("No se pudo acceder a la cámara:", error);
+                document.getElementById("resultado").innerText = "Error al acceder a la cámara. Revisa los permisos del navegador.";
+            });
+        }
+
+        function onScanSuccess(qrCodeMessage) {
+            // Detener el escaneo para evitar múltiples lecturas
+            scanner.stop().then(() => {
+                document.getElementById("resultado").innerText = "Código escaneado: " + qrCodeMessage;
+
+                // Enviar el código a la API de Google Apps Script
+                fetch("https://script.google.com/macros/s/AKfycbxVYafohnI8efNJ9jkAizZQ_W8StXNH7KYtUl6fPl79FvfOUBcMar6QVqtYb1y7fw4b/exec?codigo=" + qrCodeMessage)
+                    .then(response => response.text())
+                    .then(data => {
+                        document.getElementById("resultado").innerText = data;
+                    })
+                    .catch(error => {
+                        console.error("Error en la solicitud:", error);
+                        document.getElementById("resultado").innerText = "Error al registrar la asistencia.";
+                    });
+            }).catch(error => console.error("Error al detener el escáner:", error));
+        }
+
+        function onScanError(errorMessage) {
+            console.warn("Error de escaneo:", errorMessage);
+        }
+    </script>
+</body>
+</html>
