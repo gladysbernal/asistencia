@@ -13,7 +13,6 @@
         #reader {
             width: 300px;
             margin: auto;
-            display: none;
         }
         #resultado {
             font-size: 18px;
@@ -29,8 +28,10 @@
 <body>
     <h2>Escanea tu Código QR</h2>
 
-    <!-- Botón para activar la cámara trasera -->
-    <button onclick="solicitarPermisos()">Activar Cámara</button>
+    <!-- Botón para iniciar el escáner -->
+    <button id="btnIniciar" onclick="iniciarEscaner()">Activar Cámara</button>
+    <!-- Botón para detener la cámara manualmente -->
+    <button id="btnDetener" onclick="detenerEscaner()" style="display: none;">Detener Cámara</button>
 
     <!-- Contenedor del escáner -->
     <div id="reader"></div>
@@ -40,64 +41,77 @@
 
     <script>
         let scanner;
-
-        async function solicitarPermisos() {
-            try {
-                // Solicitar acceso a la cámara antes de iniciar el escáner
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                stream.getTracks().forEach(track => track.stop()); // Detener la cámara después de conceder permisos
-
-                iniciarEscaner(); // Si los permisos son concedidos, inicia el escáner
-            } catch (error) {
-                console.error("Error al acceder a la cámara:", error);
-                document.getElementById("resultado").innerText = "⚠️ No se pudo acceder a la cámara. Revisa los permisos del navegador.";
-            }
-        }
+        let escanerActivo = false; // Variable para saber si la cámara está activa
 
         function iniciarEscaner() {
+            if (escanerActivo) return; // Evita reiniciar el escáner si ya está activo
+
             Html5Qrcode.getCameras().then(cameras => {
                 if (cameras && cameras.length) {
-                    // Seleccionar la última cámara disponible (normalmente la trasera)
-                    let cameraId = cameras[cameras.length - 1].id;
-
+                    let cameraId = cameras[cameras.length - 1].id; // Selecciona la última cámara (normalmente la trasera)
+                    
                     scanner = new Html5Qrcode("reader");
+                    escanerActivo = true;
+
                     document.getElementById("reader").style.display = "block"; // Mostrar el escáner
+                    document.getElementById("btnIniciar").style.display = "none"; // Ocultar el botón de activar
+                    document.getElementById("btnDetener").style.display = "inline"; // Mostrar botón para detener
 
                     scanner.start(
                         cameraId,
                         {
-                            fps: 10, 
-                            qrbox: { width: 250, height: 250 } 
+                            fps: 10, // Velocidad de escaneo (fotogramas por segundo)
+                            qrbox: { width: 250, height: 250 } // Área de escaneo
                         },
                         onScanSuccess,
                         onScanError
                     ).catch(error => {
                         console.error("Error al iniciar escáner:", error);
-                        document.getElementById("resultado").innerText = "⚠️ Error al iniciar la cámara. Asegúrate de permitir el acceso.";
+                        document.getElementById("resultado").innerText = "⚠️ Error al iniciar la cámara.";
+                        escanerActivo = false;
                     });
                 } else {
-                    document.getElementById("resultado").innerText = "⚠️ No se encontraron cámaras en el dispositivo.";
+                    document.getElementById("resultado").innerText = "⚠️ No se encontraron cámaras.";
                 }
             }).catch(error => {
-                console.error("No se pudo acceder a la cámara:", error);
-                document.getElementById("resultado").innerText = "⚠️ No se pudo acceder a la cámara. Revisa los permisos.";
+                console.error("Error al acceder a la cámara:", error);
+                document.getElementById("resultado").innerText = "⚠️ Revisa los permisos del navegador.";
             });
         }
 
-        function onScanSuccess(qrCodeMessage) {
-            scanner.stop().then(() => {
-                document.getElementById("resultado").innerText = "Código escaneado: " + qrCodeMessage;
+        function detenerEscaner() {
+            if (!escanerActivo) return;
 
-                fetch("https://script.google.com/macros/s/AKfycbxVYafohnI8efNJ9jkAizZQ_W8StXNH7KYtUl6fPl79FvfOUBcMar6QVqtYb1y7fw4b/exec?codigo=" + encodeURIComponent(qrCodeMessage))
-                    .then(response => response.text())
-                    .then(data => {
-                        document.getElementById("resultado").innerText = data;
-                    })
-                    .catch(error => {
-                        console.error("Error en la solicitud:", error);
-                        document.getElementById("resultado").innerText = "⚠️ Error al registrar la asistencia.";
-                    });
+            scanner.stop().then(() => {
+                escanerActivo = false;
+                document.getElementById("reader").style.display = "none"; // Ocultar el escáner
+                document.getElementById("btnIniciar").style.display = "inline"; // Mostrar botón de activar
+                document.getElementById("btnDetener").style.display = "none"; // Ocultar botón de detener
+                document.getElementById("resultado").innerText = "Escaneo detenido.";
             }).catch(error => console.error("Error al detener el escáner:", error));
+        }
+
+        function onScanSuccess(qrCodeMessage) {
+            // Evita escaneos duplicados rápidos
+            if (!escanerActivo) return;
+
+            document.getElementById("resultado").innerText = "Código escaneado: " + qrCodeMessage;
+
+            // Enviar el código QR a la API de Google Apps Script
+            fetch("https://script.google.com/macros/s/AKfycbxVYafohnI8efNJ9jkAizZQ_W8StXNH7KYtUl6fPl79FvfOUBcMar6QVqtYb1y7fw4b/exec?codigo=" + encodeURIComponent(qrCodeMessage))
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById("resultado").innerText = data;
+                })
+                .catch(error => {
+                    console.error("Error en la solicitud:", error);
+                    document.getElementById("resultado").innerText = "⚠️ Error al registrar la asistencia.";
+                });
+
+            // Opcional: Esperar 2 segundos antes de permitir otro escaneo
+            setTimeout(() => {
+                escanerActivo = true; // Reactivar escáner para siguiente lectura
+            }, 2000);
         }
 
         function onScanError(errorMessage) {
