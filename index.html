@@ -115,7 +115,7 @@
     console.log("Código QR escaneado:", qrCodeMessage);
 
     // Enviar el código QR a la API de Google Apps Script
-    fetch("https://script.google.com/macros/s/AKfycbykaxHAN4Vh715fBDarF6ltVZbIOgwIoiHHMPIfwEWBbSCnP1k5evgV2EaMH_PmrCwX/exec?codigo=" + encodeURIComponent(qrCodeMessage.trim()))
+    fetch("https://script.google.com/macros/s/AKfycbwpdkf_ksPw7Df9eHG4IDzAlZGzYMSwx11CM54Ka7oNkRlPZQF7L7ObNgTOlCr8fY_Z/exec?codigo=" + encodeURIComponent(qrCodeMessage.trim()))
         .then(response => response.text())
         .then(data => {
             console.log("Respuesta de la API:", data); // 📌 DEBUG: Mostrar respuesta en consola
