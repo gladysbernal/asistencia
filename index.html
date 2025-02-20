@@ -106,29 +106,31 @@
         }
 
         function onScanSuccess(qrCodeMessage) {
-            if (!escanerActivo) return;
+    if (!escanerActivo) return;
 
-            document.getElementById("resultado").innerText = "Código escaneado: " + qrCodeMessage;
+    // Mostrar en pantalla el código escaneado
+    document.getElementById("resultado").innerText = "Código escaneado: " + qrCodeMessage;
 
-            fetch("https://script.google.com/macros/s/AKfycbxVYafohnI8efNJ9jkAizZQ_W8StXNH7KYtUl6fPl79FvfOUBcMar6QVqtYb1y7fw4b/exec?codigo=" + encodeURIComponent(qrCodeMessage))
-                .then(response => response.text())
-                .then(data => {
-                    if (data.includes("Error")) {
-                        document.getElementById("resultado").innerText = "❌ Error al registrar la asistencia.";
-                    } else {
-                        document.getElementById("resultado").innerText = "✅ " + data;
-                        reiniciarTemporizadorInactividad();
-                    }
-                })
-                .catch(error => {
-                    console.error("Error en la solicitud:", error);
-                    document.getElementById("resultado").innerText = "⚠️ No se pudo registrar la asistencia.";
-                });
+    // 📌 DEBUG: Mostrar en la consola lo que está enviando
+    console.log("Código QR escaneado:", qrCodeMessage);
 
-            setTimeout(() => {
-                escanerActivo = true;
-            }, 2000);
-        }
+    // Enviar el código QR a la API de Google Apps Script
+    fetch("https://script.google.com/macros/s/AKfycbxVYafohnI8efNJ9jkAizZQ_W8StXNH7KYtUl6fPl79FvfOUBcMar6QVqtYb1y7fw4b/exec?codigo=" + encodeURIComponent(qrCodeMessage.trim()))
+        .then(response => response.text())
+        .then(data => {
+            console.log("Respuesta de la API:", data); // 📌 DEBUG: Mostrar respuesta en consola
+            document.getElementById("resultado").innerText = data;
+        })
+        .catch(error => {
+            console.error("❌ Error en la solicitud:", error);
+            document.getElementById("resultado").innerText = "⚠️ No se pudo registrar la asistencia.";
+        });
+
+    setTimeout(() => {
+        escanerActivo = true;
+    }, 2000);
+}
+
 
         function onScanError(errorMessage) {
             console.warn("Error de escaneo:", errorMessage);
