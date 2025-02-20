@@ -41,27 +41,28 @@
 
     <script>
         let scanner;
-        let escanerActivo = false; // Variable para saber si la cámara está activa
+        let escanerActivo = false;
+        let inactividadTimer;
 
         function iniciarEscaner() {
-            if (escanerActivo) return; // Evita reiniciar el escáner si ya está activo
+            if (escanerActivo) return;
 
             Html5Qrcode.getCameras().then(cameras => {
                 if (cameras && cameras.length) {
-                    let cameraId = cameras[cameras.length - 1].id; // Selecciona la última cámara (normalmente la trasera)
-                    
+                    let cameraId = cameras[cameras.length - 1].id;
+
                     scanner = new Html5Qrcode("reader");
                     escanerActivo = true;
 
-                    document.getElementById("reader").style.display = "block"; // Mostrar el escáner
-                    document.getElementById("btnIniciar").style.display = "none"; // Ocultar el botón de activar
-                    document.getElementById("btnDetener").style.display = "inline"; // Mostrar botón para detener
+                    document.getElementById("reader").style.display = "block";
+                    document.getElementById("btnIniciar").style.display = "none";
+                    document.getElementById("btnDetener").style.display = "inline";
 
                     scanner.start(
                         cameraId,
                         {
-                            fps: 10, // Velocidad de escaneo (fotogramas por segundo)
-                            qrbox: { width: 250, height: 250 } // Área de escaneo
+                            fps: 10,
+                            qrbox: { width: 250, height: 250 }
                         },
                         onScanSuccess,
                         onScanError
@@ -70,6 +71,8 @@
                         document.getElementById("resultado").innerText = "⚠️ Error al iniciar la cámara.";
                         escanerActivo = false;
                     });
+
+                    reiniciarTemporizadorInactividad(); // Iniciar conteo para cierre automático
                 } else {
                     document.getElementById("resultado").innerText = "⚠️ No se encontraron cámaras.";
                 }
@@ -84,39 +87,53 @@
 
             scanner.stop().then(() => {
                 escanerActivo = false;
-                document.getElementById("reader").style.display = "none"; // Ocultar el escáner
-                document.getElementById("btnIniciar").style.display = "inline"; // Mostrar botón de activar
-                document.getElementById("btnDetener").style.display = "none"; // Ocultar botón de detener
+                document.getElementById("reader").style.display = "none";
+                document.getElementById("btnIniciar").style.display = "inline";
+                document.getElementById("btnDetener").style.display = "none";
                 document.getElementById("resultado").innerText = "Escaneo detenido.";
+
+                clearTimeout(inactividadTimer); // Detener temporizador de inactividad
             }).catch(error => console.error("Error al detener el escáner:", error));
         }
 
+        function reiniciarTemporizadorInactividad() {
+            clearTimeout(inactividadTimer); // Limpiar temporizador anterior
+
+            // Cerrar el escáner automáticamente si no se usa en 2 minutos (120,000 ms)
+            inactividadTimer = setTimeout(() => {
+                detenerEscaner();
+                document.getElementById("resultado").innerText = "⚠️ Cámara cerrada por inactividad.";
+            }, 120000);
+        }
+
         function onScanSuccess(qrCodeMessage) {
-            // Evita escaneos duplicados rápidos
             if (!escanerActivo) return;
 
             document.getElementById("resultado").innerText = "Código escaneado: " + qrCodeMessage;
 
-            // Enviar el código QR a la API de Google Apps Script
-            fetch("https://script.google.com/macros/s/AKfycbykaxHAN4Vh715fBDarF6ltVZbIOgwIoiHHMPIfwEWBbSCnP1k5evgV2EaMH_PmrCwX/exec?codigo=" + encodeURIComponent(qrCodeMessage))
+            fetch("https://script.google.com/macros/s/TU-URL-DE-API/exec?codigo=" + encodeURIComponent(qrCodeMessage))
                 .then(response => response.text())
                 .then(data => {
                     document.getElementById("resultado").innerText = data;
+                    reiniciarTemporizadorInactividad(); // Reiniciar temporizador tras escanear
                 })
                 .catch(error => {
                     console.error("Error en la solicitud:", error);
                     document.getElementById("resultado").innerText = "⚠️ Error al registrar la asistencia.";
                 });
-
-            // Opcional: Esperar 2 segundos antes de permitir otro escaneo
-            setTimeout(() => {
-                escanerActivo = true; // Reactivar escáner para siguiente lectura
-            }, 2000);
         }
 
         function onScanError(errorMessage) {
             console.warn("Error de escaneo:", errorMessage);
         }
+
+        // Cierra la cámara si el usuario cambia de pestaña o cierra la app
+        window.addEventListener("beforeunload", () => {
+            if (escanerActivo) detenerEscaner();
+        });
+    </script>
+</body>
+</html>
     </script>
 </body>
 </html>
