@@ -108,22 +108,36 @@
         function onScanSuccess(qrCodeMessage) {
     if (!escanerActivo) return;
 
-    // Mostrar en pantalla el código escaneado
-    document.getElementById("resultado").innerText = "Código escaneado: " + qrCodeMessage;
+    let codigoLimpio = qrCodeMessage.replace(/[^a-zA-Z0-9]/g, '').trim();
+    document.getElementById("resultado").innerText = "⏳ Enviando código...";
+    document.getElementById("resultado").style.color = "black"; 
 
-    // 📌 DEBUG: Mostrar en la consola lo que está enviando
-    console.log("Código QR escaneado:", qrCodeMessage);
+    console.log("Código QR enviado:", codigoLimpio);
 
-    // Enviar el código QR a la API de Google Apps Script
-    fetch("https://script.google.com/macros/s/AKfycbwpdkf_ksPw7Df9eHG4IDzAlZGzYMSwx11CM54Ka7oNkRlPZQF7L7ObNgTOlCr8fY_Z/exec?codigo=" + encodeURIComponent(qrCodeMessage.trim()))
+    let urlAPI = "https://script.google.com/macros/s/AKfycbwpdkf_ksPw7Df9eHG4IDzAlZGzYMSwx11CM54Ka7oNkRlPZQF7L7ObNgTOlCr8fY_Z/exec?codigo=" + encodeURIComponent(codigoLimpio);
+    console.log("URL de la API:", urlAPI);
+
+    fetch(urlAPI)
         .then(response => response.text())
         .then(data => {
-            console.log("Respuesta de la API:", data); // 📌 DEBUG: Mostrar respuesta en consola
+            console.log("Respuesta de la API:", data);
+
+            // Cambiar el color del mensaje según la respuesta de la API
+            if (data.includes("⚠️")) {
+                document.getElementById("resultado").style.color = "orange";
+            } else if (data.includes("✅")) {
+                document.getElementById("resultado").style.color = "green";
+            } else {
+                document.getElementById("resultado").style.color = "red";
+            }
+
             document.getElementById("resultado").innerText = data;
+            reiniciarTemporizadorInactividad();
         })
         .catch(error => {
             console.error("❌ Error en la solicitud:", error);
             document.getElementById("resultado").innerText = "⚠️ No se pudo registrar la asistencia.";
+            document.getElementById("resultado").style.color = "red";
         });
 
     setTimeout(() => {
