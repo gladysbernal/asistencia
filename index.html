@@ -112,17 +112,17 @@
     document.getElementById("resultado").innerText = "⏳ Enviando código...";
     document.getElementById("resultado").style.color = "black"; 
 
-    console.log("Código QR enviado:", codigoLimpio);
+    console.log("📡 Código QR enviado:", codigoLimpio);
 
     let urlAPI = "https://script.google.com/macros/s/AKfycby1TJ60dyN9Azdlmmp1pMOwPCNiImt8ve-iR4i-xGsgpir6lzkmpKyP8aGwIgr5FQ0i/exec?codigo=" + encodeURIComponent(codigoLimpio);
-    console.log("URL de la API:", urlAPI);
+    console.log("🔗 URL de la API:", urlAPI);
 
     fetch(urlAPI)
         .then(response => response.text())
         .then(data => {
-            console.log("Respuesta de la API:", data);
+            console.log("🔍 Respuesta de la API:", data);
 
-            // Cambiar el color del mensaje según la respuesta de la API
+            // 🔹 Mostrar mensaje con color dependiendo de la respuesta
             if (data.includes("⚠️")) {
                 document.getElementById("resultado").style.color = "orange";
             } else if (data.includes("✅")) {
@@ -144,6 +144,7 @@
         escanerActivo = true;
     }, 2000);
 }
+
 
 
         function onScanError(errorMessage) {
