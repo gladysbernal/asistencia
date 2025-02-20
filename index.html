@@ -40,13 +40,18 @@
         let escanerActivo = false;
         let inactividadTimer;
 
-        function iniciarEscaner() {
-            if (escanerActivo) return;
+       function iniciarEscaner() {
+    if (escanerActivo) return;
+
+    // Comprobación de permisos antes de iniciar la cámara
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+            stream.getTracks().forEach(track => track.stop()); // Detener la cámara tras otorgar permisos
 
             Html5Qrcode.getCameras().then(cameras => {
                 if (cameras && cameras.length) {
-                    let cameraId = cameras[cameras.length - 1].id;
-                    
+                    let cameraId = cameras[cameras.length - 1].id; // Última cámara disponible (trasera)
+
                     if (!scanner) {
                         scanner = new Html5Qrcode("reader");
                     }
@@ -66,8 +71,8 @@
                         onScanSuccess,
                         onScanError
                     ).catch(error => {
-                        console.error("Error al iniciar escáner:", error);
-                        document.getElementById("resultado").innerText = "⚠️ Error al iniciar la cámara.";
+                        console.error("❌ Error al iniciar el escáner:", error);
+                        document.getElementById("resultado").innerText = "⚠️ No se pudo activar la cámara. Revisa los permisos.";
                         escanerActivo = false;
                     });
 
@@ -76,10 +81,16 @@
                     document.getElementById("resultado").innerText = "⚠️ No se encontraron cámaras.";
                 }
             }).catch(error => {
-                console.error("Error al acceder a la cámara:", error);
-                document.getElementById("resultado").innerText = "⚠️ Revisa los permisos del navegador.";
+                console.error("❌ Error al acceder a la cámara:", error);
+                document.getElementById("resultado").innerText = "⚠️ No se pudo acceder a la cámara. Revisa los permisos.";
             });
-        }
+        })
+        .catch(error => {
+            console.error("❌ Permisos de la cámara denegados:", error);
+            document.getElementById("resultado").innerText = "⚠️ No se otorgaron permisos para la cámara.";
+        });
+}
+
 
         function detenerEscaner() {
             if (!escanerActivo) return;
@@ -105,7 +116,7 @@
             }, 120000);
         }
 
-       function onScanSuccess(qrCodeMessage) {
+      function onScanSuccess(qrCodeMessage) {
     if (!escanerActivo) return;
 
     let codigoLimpio = qrCodeMessage.replace(/[^a-zA-Z0-9]/g, '').trim();
@@ -120,17 +131,19 @@
     fetch(urlAPI)
         .then(response => response.text())
         .then(data => {
-            console.log("🔍 RESPUESTA DE LA API:", data); // 📌 Esto imprimirá la respuesta de la API en la consola
+            console.log("🔍 RESPUESTA DE LA API:", data);
 
             document.getElementById("resultado").innerText = data;
 
-            // Verificar si la respuesta realmente contiene "⚠️"
-            if (data.includes("⚠️")) {
-                document.getElementById("resultado").style.color = "orange";
-            } else if (data.includes("✅")) {
-                document.getElementById("resultado").style.color = "green";
+            // Convertir a minúsculas para evitar errores de comparación
+            let dataLimpia = data.toLowerCase().trim();
+
+            if (dataLimpia.includes("⚠️") || dataLimpia.includes("ya fue registrada")) {
+                document.getElementById("resultado").style.color = "orange"; // Color naranja para advertencia
+            } else if (dataLimpia.includes("✅") || dataLimpia.includes("registrada para")) {
+                document.getElementById("resultado").style.color = "green"; // Color verde para éxito
             } else {
-                document.getElementById("resultado").style.color = "red";
+                document.getElementById("resultado").style.color = "red"; // Color rojo para error
             }
 
             reiniciarTemporizadorInactividad();
@@ -145,6 +158,7 @@
         escanerActivo = true;
     }, 2000);
 }
+
 
 
 
