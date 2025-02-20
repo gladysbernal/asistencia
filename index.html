@@ -105,7 +105,7 @@
             }, 120000);
         }
 
-        function onScanSuccess(qrCodeMessage) {
+       function onScanSuccess(qrCodeMessage) {
     if (!escanerActivo) return;
 
     let codigoLimpio = qrCodeMessage.replace(/[^a-zA-Z0-9]/g, '').trim();
@@ -120,9 +120,11 @@
     fetch(urlAPI)
         .then(response => response.text())
         .then(data => {
-            console.log("🔍 Respuesta de la API:", data);
+            console.log("🔍 RESPUESTA DE LA API:", data); // 📌 Esto imprimirá la respuesta de la API en la consola
 
-            // 🔹 Mostrar mensaje con color dependiendo de la respuesta
+            document.getElementById("resultado").innerText = data;
+
+            // Verificar si la respuesta realmente contiene "⚠️"
             if (data.includes("⚠️")) {
                 document.getElementById("resultado").style.color = "orange";
             } else if (data.includes("✅")) {
@@ -131,7 +133,6 @@
                 document.getElementById("resultado").style.color = "red";
             }
 
-            document.getElementById("resultado").innerText = data;
             reiniciarTemporizadorInactividad();
         })
         .catch(error => {
@@ -144,6 +145,7 @@
         escanerActivo = true;
     }, 2000);
 }
+
 
 
 
