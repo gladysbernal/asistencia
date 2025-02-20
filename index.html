@@ -28,15 +28,11 @@
 <body>
     <h2>Escanea tu Código QR</h2>
 
-    <!-- Botón para iniciar el escáner -->
     <button id="btnIniciar" onclick="iniciarEscaner()">Activar Cámara</button>
-    <!-- Botón para detener la cámara manualmente -->
     <button id="btnDetener" onclick="detenerEscaner()" style="display: none;">Detener Cámara</button>
 
-    <!-- Contenedor del escáner -->
     <div id="reader"></div>
 
-    <!-- Resultado del escaneo -->
     <p id="resultado">Escanea un código QR para registrar la asistencia.</p>
 
     <script>
@@ -50,8 +46,11 @@
             Html5Qrcode.getCameras().then(cameras => {
                 if (cameras && cameras.length) {
                     let cameraId = cameras[cameras.length - 1].id;
+                    
+                    if (!scanner) {
+                        scanner = new Html5Qrcode("reader");
+                    }
 
-                    scanner = new Html5Qrcode("reader");
                     escanerActivo = true;
 
                     document.getElementById("reader").style.display = "block";
@@ -72,7 +71,7 @@
                         escanerActivo = false;
                     });
 
-                    reiniciarTemporizadorInactividad(); // Iniciar conteo para cierre automático
+                    reiniciarTemporizadorInactividad();
                 } else {
                     document.getElementById("resultado").innerText = "⚠️ No se encontraron cámaras.";
                 }
@@ -92,18 +91,17 @@
                 document.getElementById("btnDetener").style.display = "none";
                 document.getElementById("resultado").innerText = "Escaneo detenido.";
 
-                clearTimeout(inactividadTimer); // Detener temporizador de inactividad
+                clearTimeout(inactividadTimer);
             }).catch(error => console.error("Error al detener el escáner:", error));
         }
 
         function reiniciarTemporizadorInactividad() {
-            clearTimeout(inactividadTimer); // Limpiar temporizador anterior
+            clearTimeout(inactividadTimer);
 
-            // Cerrar el escáner automáticamente si no se usa en 2 minutos (120,000 ms)
             inactividadTimer = setTimeout(() => {
                 detenerEscaner();
                 document.getElementById("resultado").innerText = "⚠️ Cámara cerrada por inactividad.";
-                escanerActivo = false; // Asegurar que el escáner puede reiniciarse después
+                escanerActivo = false;
             }, 120000);
         }
 
@@ -112,34 +110,34 @@
 
             document.getElementById("resultado").innerText = "Código escaneado: " + qrCodeMessage;
 
-            // Enviar el código QR a la API de Google Apps Script
             fetch("https://script.google.com/macros/s/AKfycbxVYafohnI8efNJ9jkAizZQ_W8StXNH7KYtUl6fPl79FvfOUBcMar6QVqtYb1y7fw4b/exec?codigo=" + encodeURIComponent(qrCodeMessage))
                 .then(response => response.text())
                 .then(data => {
-                    document.getElementById("resultado").innerText = data;
-                    reiniciarTemporizadorInactividad(); // Reiniciar temporizador tras escanear
-
-                    // Agregar un retardo de 2 segundos antes de aceptar otro escaneo
-                    setTimeout(() => {
-                        escanerActivo = true;
-                    }, 2000);
+                    if (data.includes("Error")) {
+                        document.getElementById("resultado").innerText = "❌ Error al registrar la asistencia.";
+                    } else {
+                        document.getElementById("resultado").innerText = "✅ " + data;
+                        reiniciarTemporizadorInactividad();
+                    }
                 })
                 .catch(error => {
                     console.error("Error en la solicitud:", error);
-                    document.getElementById("resultado").innerText = "⚠️ Error al registrar la asistencia.";
+                    document.getElementById("resultado").innerText = "⚠️ No se pudo registrar la asistencia.";
                 });
+
+            setTimeout(() => {
+                escanerActivo = true;
+            }, 2000);
         }
 
         function onScanError(errorMessage) {
             console.warn("Error de escaneo:", errorMessage);
         }
 
-        // Cierra la cámara si el usuario cambia de pestaña o cierra la app
         window.addEventListener("beforeunload", () => {
             if (escanerActivo) detenerEscaner();
         });
 
-        // Si la cámara se cierra por inactividad, permitir reactivación
         document.getElementById("btnIniciar").addEventListener("click", () => {
             if (!escanerActivo) iniciarEscaner();
         });
