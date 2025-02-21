@@ -122,7 +122,7 @@
             }, 120000);
         }
 
-        function onScanSuccess(qrCodeMessage) {
+    function onScanSuccess(qrCodeMessage) {
     if (!escanerActivo) return;
 
     let codigoLimpio = qrCodeMessage.replace(/[^a-zA-Z0-9]/g, '').trim();
@@ -131,7 +131,7 @@
 
     console.log("📡 Código QR enviado:", codigoLimpio);
 
-    let urlAPI = "https://script.google.com/macros/s/TU-URL-DE-API/exec?codigo=" + encodeURIComponent(codigoLimpio);
+    let urlAPI = "https://script.google.com/macros/s/AKfycbzs6UmoJPVkj47s7-vMc2xxCGJZrfIQz5-IU_mnAlfdeophcK6Jr7agzcd4As_oy47z/exec?codigo=" + encodeURIComponent(codigoLimpio);
     console.log("🔗 URL de la API:", urlAPI);
 
     fetch(urlAPI)
