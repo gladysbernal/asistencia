@@ -123,38 +123,39 @@
         }
 
         function onScanSuccess(qrCodeMessage) {
-            if (!escanerActivo) return;
+    if (!escanerActivo) return;
 
-            let codigoLimpio = qrCodeMessage.replace(/[^a-zA-Z0-9]/g, '').trim();
-            document.getElementById("resultado").innerText = "⏳ Enviando código...";
-            document.getElementById("resultado").style.color = "black"; 
+    let codigoLimpio = qrCodeMessage.replace(/[^a-zA-Z0-9]/g, '').trim();
+    document.getElementById("resultado").innerText = "⏳ Enviando código...";
+    document.getElementById("resultado").style.color = "black"; 
 
-            console.log("📡 Código QR enviado:", codigoLimpio);
+    console.log("📡 Código QR enviado:", codigoLimpio);
 
-            let urlAPI = "https://script.google.com/macros/s/AKfycbzs6UmoJPVkj47s7-vMc2xxCGJZrfIQz5-IU_mnAlfdeophcK6Jr7agzcd4As_oy47z/exec?codigo=" + encodeURIComponent(codigoLimpio);
-            console.log("🔗 URL de la API:", urlAPI);
+    let urlAPI = "https://script.google.com/macros/s/TU-URL-DE-API/exec?codigo=" + encodeURIComponent(codigoLimpio);
+    console.log("🔗 URL de la API:", urlAPI);
 
-            fetch(urlAPI)
-                .then(response => response.text())
-                .then(data => {
-                    console.log("🔍 RESPUESTA DE LA API:", data);
+    fetch(urlAPI)
+        .then(response => response.text())
+        .then(data => {
+            console.log("🔍 RESPUESTA DE LA API:", data);
 
-                    if (data.includes("⚠️")) {
-                        document.getElementById("resultado").innerText = data;
-                        document.getElementById("resultado").style.color = "orange";
-                    } else {
-                        document.getElementById("resultado").innerText = data;
-                        document.getElementById("resultado").style.color = "green";
-                    }
+            if (data.includes("⚠️")) {
+                document.getElementById("resultado").innerText = data;
+                document.getElementById("resultado").style.color = "orange";
+            } else {
+                document.getElementById("resultado").innerText = data;
+                document.getElementById("resultado").style.color = "green";
+            }
 
-                    reiniciarTemporizadorInactividad();
-                })
-                .catch(error => {
-                    console.error("❌ Error en la solicitud:", error);
-                    document.getElementById("resultado").innerText = "⚠️ No se pudo registrar la asistencia.";
-                    document.getElementById("resultado").style.color = "red";
-                });
-        }
+            reiniciarTemporizadorInactividad();
+        })
+        .catch(error => {
+            console.error("❌ Error en la solicitud:", error);
+            document.getElementById("resultado").innerText = "⚠️ No se pudo registrar la asistencia.";
+            document.getElementById("resultado").style.color = "red";
+        });
+} // ✅ Asegúrate de que solo haya un cierre de función aquí
+
 
         function onScanError(errorMessage) {
             console.warn("⚠️ Advertencia de escaneo:", errorMessage);
