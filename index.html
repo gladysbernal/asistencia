@@ -43,15 +43,14 @@
        function iniciarEscaner() {
     if (escanerActivo) return;
 
-    // Primero, verificar si la cámara tiene permisos antes de activarla
+    // Verificar si hay permisos de la cámara antes de activarla
     navigator.mediaDevices.getUserMedia({ video: true })
         .then(stream => {
-            stream.getTracks().forEach(track => track.stop()); // Detener la cámara tras otorgar permisos
+            stream.getTracks().forEach(track => track.stop()); // Detener la cámara tras verificar permisos
 
-            // Ahora iniciar el escáner solo si hay permisos
             Html5Qrcode.getCameras().then(cameras => {
-                if (cameras && cameras.length) {
-                    let cameraId = cameras[cameras.length - 1].id; // Última cámara disponible (trasera)
+                if (cameras.length > 0) {
+                    let cameraId = cameras[cameras.length - 1].id; // Usar la cámara trasera si está disponible
 
                     if (!scanner) {
                         scanner = new Html5Qrcode("reader");
@@ -59,16 +58,15 @@
 
                     escanerActivo = true;
 
+                    // Mostrar la cámara y ocultar el botón de inicio
                     document.getElementById("reader").style.display = "block";
                     document.getElementById("btnIniciar").style.display = "none";
                     document.getElementById("btnDetener").style.display = "inline";
 
+                    // Iniciar el escáner QR
                     scanner.start(
                         cameraId,
-                        {
-                            fps: 10,
-                            qrbox: { width: 250, height: 250 }
-                        },
+                        { fps: 10, qrbox: { width: 250, height: 250 } },
                         onScanSuccess,
                         onScanError
                     ).catch(error => {
@@ -79,34 +77,34 @@
 
                     reiniciarTemporizadorInactividad();
                 } else {
-                    document.getElementById("resultado").innerText = "⚠️ No se encontraron cámaras.";
+                    document.getElementById("resultado").innerText = "⚠️ No se encontraron cámaras disponibles.";
                 }
             }).catch(error => {
-                console.error("❌ Error al acceder a la cámara:", error);
-                document.getElementById("resultado").innerText = "⚠️ No se pudo acceder a la cámara. Revisa los permisos.";
+                console.error("❌ Error al obtener cámaras:", error);
+                document.getElementById("resultado").innerText = "⚠️ Error al acceder a la cámara.";
             });
         })
         .catch(error => {
-            console.error("❌ Permisos de la cámara denegados:", error);
+            console.error("❌ Permisos de cámara denegados:", error);
             document.getElementById("resultado").innerText = "⚠️ No se otorgaron permisos para la cámara.";
         });
 }
 
 
 
+
         function detenerEscaner() {
-            if (!escanerActivo) return;
+    if (!escanerActivo) return;
 
-            scanner.stop().then(() => {
-                escanerActivo = false;
-                document.getElementById("reader").style.display = "none";
-                document.getElementById("btnIniciar").style.display = "inline";
-                document.getElementById("btnDetener").style.display = "none";
-                document.getElementById("resultado").innerText = "Escaneo detenido.";
-
-                clearTimeout(inactividadTimer);
-            }).catch(error => console.error("Error al detener el escáner:", error));
-        }
+    scanner.stop().then(() => {
+        escanerActivo = false;
+        document.getElementById("reader").style.display = "none";
+        document.getElementById("btnIniciar").style.display = "inline";
+        document.getElementById("btnDetener").style.display = "none";
+        document.getElementById("resultado").innerText = "Escaneo detenido.";
+        clearTimeout(inactividadTimer);
+    }).catch(error => console.error("❌ Error al detener el escáner:", error));
+}
 
         function reiniciarTemporizadorInactividad() {
             clearTimeout(inactividadTimer);
