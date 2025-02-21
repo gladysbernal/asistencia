@@ -13,6 +13,7 @@
         #reader {
             width: 300px;
             margin: auto;
+            display: none; /* Oculto hasta activar */
         }
         #resultado {
             font-size: 18px;
@@ -22,6 +23,7 @@
             padding: 10px;
             font-size: 16px;
             margin-top: 10px;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -30,7 +32,6 @@
 
     <button id="btnIniciar">🎥 Activar Cámara</button>
     <button id="btnDetener" style="display: none;">⏹️ Detener Cámara</button>
-
 
     <div id="reader"></div>
 
@@ -41,77 +42,79 @@
         let escanerActivo = false;
         let inactividadTimer;
 
-       function iniciarEscaner() {
-    if (escanerActivo) return;
-
-    // Verificar si hay permisos de la cámara antes de activarla
-    navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => {
-            stream.getTracks().forEach(track => track.stop()); // Detener la cámara tras verificar permisos
-
-            Html5Qrcode.getCameras().then(cameras => {
-                if (cameras.length > 0) {
-                    let cameraId = cameras[cameras.length - 1].id; // Usar la cámara trasera si está disponible
-
-                    if (!scanner) {
-                        scanner = new Html5Qrcode("reader");
-                    }
-
-                    escanerActivo = true;
-
-                    // Mostrar la cámara y ocultar el botón de inicio
-                    document.getElementById("btnIniciar").addEventListener("click", function() {
-                    console.log("✅ Botón 'Activar Cámara' presionado");
-                    iniciarEscaner();
-                    });
-
-
-                    // Iniciar el escáner QR
-                    scanner.start(
-                        cameraId,
-                        { fps: 10, qrbox: { width: 250, height: 250 } },
-                        onScanSuccess,
-                        onScanError
-                    ).catch(error => {
-                        console.error("❌ Error al iniciar el escáner:", error);
-                        document.getElementById("resultado").innerText = "⚠️ No se pudo activar la cámara. Revisa los permisos.";
-                        escanerActivo = false;
-                    });
-
-                    reiniciarTemporizadorInactividad();
-                } else {
-                    document.getElementById("resultado").innerText = "⚠️ No se encontraron cámaras disponibles.";
-                }
-            }).catch(error => {
-                console.error("❌ Error al obtener cámaras:", error);
-                document.getElementById("resultado").innerText = "⚠️ Error al acceder a la cámara.";
-            });
-        })
-        .catch(error => {
-            console.error("❌ Permisos de cámara denegados:", error);
-            document.getElementById("resultado").innerText = "⚠️ No se otorgaron permisos para la cámara.";
+        // ✅ Agregar evento al botón "Activar Cámara"
+        document.getElementById("btnIniciar").addEventListener("click", function() {
+            console.log("✅ Botón 'Activar Cámara' presionado");
+            iniciarEscaner();
         });
-}
 
+        // ✅ Agregar evento al botón "Detener Cámara"
+        document.getElementById("btnDetener").addEventListener("click", function() {
+            detenerEscaner();
+        });
 
+        function iniciarEscaner() {
+            if (escanerActivo) return;
 
+            // 🔹 Verificar si la cámara tiene permisos antes de activarla
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(stream => {
+                    stream.getTracks().forEach(track => track.stop()); // Detener la cámara tras otorgar permisos
+
+                    Html5Qrcode.getCameras().then(cameras => {
+                        if (cameras.length > 0) {
+                            let cameraId = cameras[cameras.length - 1].id; // Usar cámara trasera
+
+                            if (!scanner) {
+                                scanner = new Html5Qrcode("reader");
+                            }
+
+                            escanerActivo = true;
+                            document.getElementById("reader").style.display = "block";
+                            document.getElementById("btnIniciar").style.display = "none";
+                            document.getElementById("btnDetener").style.display = "inline";
+
+                            scanner.start(
+                                cameraId,
+                                { fps: 10, qrbox: { width: 250, height: 250 } },
+                                onScanSuccess,
+                                onScanError
+                            ).catch(error => {
+                                console.error("❌ Error al iniciar el escáner:", error);
+                                document.getElementById("resultado").innerText = "⚠️ No se pudo activar la cámara. Revisa los permisos.";
+                                escanerActivo = false;
+                            });
+
+                            reiniciarTemporizadorInactividad();
+                        } else {
+                            document.getElementById("resultado").innerText = "⚠️ No se encontraron cámaras disponibles.";
+                        }
+                    }).catch(error => {
+                        console.error("❌ Error al obtener cámaras:", error);
+                        document.getElementById("resultado").innerText = "⚠️ Error al acceder a la cámara.";
+                    });
+                })
+                .catch(error => {
+                    console.error("❌ Permisos de cámara denegados:", error);
+                    document.getElementById("resultado").innerText = "⚠️ No se otorgaron permisos para la cámara.";
+                });
+        }
 
         function detenerEscaner() {
-    if (!escanerActivo) return;
+            if (!escanerActivo) return;
 
-    scanner.stop().then(() => {
-        escanerActivo = false;
-        document.getElementById("reader").style.display = "none";
-        document.getElementById("btnIniciar").style.display = "inline";
-        document.getElementById("btnDetener").style.display = "none";
-        document.getElementById("resultado").innerText = "Escaneo detenido.";
-        clearTimeout(inactividadTimer);
-    }).catch(error => console.error("❌ Error al detener el escáner:", error));
-}
+            scanner.stop().then(() => {
+                escanerActivo = false;
+                document.getElementById("reader").style.display = "none";
+                document.getElementById("btnIniciar").style.display = "inline";
+                document.getElementById("btnDetener").style.display = "none";
+                document.getElementById("resultado").innerText = "Escaneo detenido.";
+                clearTimeout(inactividadTimer);
+            }).catch(error => console.error("❌ Error al detener el escáner:", error));
+        }
 
         function reiniciarTemporizadorInactividad() {
             clearTimeout(inactividadTimer);
-
             inactividadTimer = setTimeout(() => {
                 detenerEscaner();
                 document.getElementById("resultado").innerText = "⚠️ Cámara cerrada por inactividad.";
@@ -119,71 +122,51 @@
             }, 120000);
         }
 
-      function onScanSuccess(qrCodeMessage) {
-    if (!escanerActivo) return;
+        function onScanSuccess(qrCodeMessage) {
+            if (!escanerActivo) return;
 
-    let codigoLimpio = qrCodeMessage.replace(/[^a-zA-Z0-9]/g, '').trim();
-    document.getElementById("resultado").innerText = "⏳ Enviando código...";
-    document.getElementById("resultado").style.color = "black"; 
+            let codigoLimpio = qrCodeMessage.replace(/[^a-zA-Z0-9]/g, '').trim();
+            document.getElementById("resultado").innerText = "⏳ Enviando código...";
+            document.getElementById("resultado").style.color = "black"; 
 
-    console.log("📡 Código QR enviado:", codigoLimpio);
+            console.log("📡 Código QR enviado:", codigoLimpio);
 
-    let urlAPI = "https://script.google.com/macros/s/AKfycbzs6UmoJPVkj47s7-vMc2xxCGJZrfIQz5-IU_mnAlfdeophcK6Jr7agzcd4As_oy47z/exec?codigo=" + encodeURIComponent(codigoLimpio);
-    console.log("🔗 URL de la API:", urlAPI);
+            let urlAPI = "https://script.google.com/macros/s/AKfycbzs6UmoJPVkj47s7-vMc2xxCGJZrfIQz5-IU_mnAlfdeophcK6Jr7agzcd4As_oy47z/exec?codigo=" + encodeURIComponent(codigoLimpio);
+            console.log("🔗 URL de la API:", urlAPI);
 
-    fetch(urlAPI)
-        .then(response => response.text())
-        .then(data => {
-            console.log("🔍 RESPUESTA DE LA API:", data);
+            fetch(urlAPI)
+                .then(response => response.text())
+                .then(data => {
+                    console.log("🔍 RESPUESTA DE LA API:", data);
 
-            // Verificar si ya estaba registrada antes de mostrar el mensaje
-            if (data.includes("⚠️")) {
-                document.getElementById("resultado").innerText = data;
-                document.getElementById("resultado").style.color = "orange";
-            } else {
-                document.getElementById("resultado").innerText = data;
-                document.getElementById("resultado").style.color = "green";
-            }
+                    if (data.includes("⚠️")) {
+                        document.getElementById("resultado").innerText = data;
+                        document.getElementById("resultado").style.color = "orange";
+                    } else {
+                        document.getElementById("resultado").innerText = data;
+                        document.getElementById("resultado").style.color = "green";
+                    }
 
-            reiniciarTemporizadorInactividad();
-        })
-        .catch(error => {
-            console.error("❌ Error en la solicitud:", error);
-            document.getElementById("resultado").innerText = "⚠️ No se pudo registrar la asistencia.";
-            document.getElementById("resultado").style.color = "red";
-        });
-}
-
-
-
-            reiniciarTemporizadorInactividad();
-        })
-        .catch(error => {
-            console.error("❌ Error en la solicitud:", error);
-            document.getElementById("resultado").innerText = "⚠️ No se pudo registrar la asistencia.";
-            document.getElementById("resultado").style.color = "red";
-        });
-
-    setTimeout(() => {
-        escanerActivo = true;
-    }, 2000);
-}
-
-
-
-
+                    reiniciarTemporizadorInactividad();
+                })
+                .catch(error => {
+                    console.error("❌ Error en la solicitud:", error);
+                    document.getElementById("resultado").innerText = "⚠️ No se pudo registrar la asistencia.";
+                    document.getElementById("resultado").style.color = "red";
+                });
+        }
 
         function onScanError(errorMessage) {
-            console.warn("Error de escaneo:", errorMessage);
+            console.warn("⚠️ Advertencia de escaneo:", errorMessage);
         }
 
         window.addEventListener("beforeunload", () => {
             if (escanerActivo) detenerEscaner();
         });
+    </script>
+</body>
+</html>
 
-        document.getElementById("btnIniciar").addEventListener("click", () => {
-            if (!escanerActivo) iniciarEscaner();
-        });
     </script>
 </body>
 </html>
