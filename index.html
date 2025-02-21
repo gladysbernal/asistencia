@@ -138,13 +138,28 @@
             // Convertir a minúsculas para evitar errores de comparación
             let dataLimpia = data.toLowerCase().trim();
 
-            if (dataLimpia.includes("⚠️") || dataLimpia.includes("ya fue registrada")) {
-                document.getElementById("resultado").style.color = "orange"; // Color naranja para advertencia
-            } else if (dataLimpia.includes("✅") || dataLimpia.includes("registrada para")) {
-                document.getElementById("resultado").style.color = "green"; // Color verde para éxito
+            // 🛑 Verificación mejorada para asistencia ya registrada
+            if (dataLimpia.includes("⚠️") || dataLimpia.includes("ya fue registrada") || dataLimpia.includes("asistencia ya fue registrada")) {
+                document.getElementById("resultado").style.color = "orange"; // Mensaje en naranja
+            } else if (dataLimpia.includes("✅") || dataLimpia.includes("asistencia registrada para")) {
+                document.getElementById("resultado").style.color = "green"; // Mensaje en verde
             } else {
-                document.getElementById("resultado").style.color = "red"; // Color rojo para error
+                document.getElementById("resultado").style.color = "red"; // Mensaje en rojo si hay error
             }
+
+            reiniciarTemporizadorInactividad();
+        })
+        .catch(error => {
+            console.error("❌ Error en la solicitud:", error);
+            document.getElementById("resultado").innerText = "⚠️ No se pudo registrar la asistencia.";
+            document.getElementById("resultado").style.color = "red";
+        });
+
+    setTimeout(() => {
+        escanerActivo = true;
+    }, 2000);
+}
+
 
             reiniciarTemporizadorInactividad();
         })
