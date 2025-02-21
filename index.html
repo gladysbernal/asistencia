@@ -60,9 +60,11 @@
                     escanerActivo = true;
 
                     // Mostrar la cámara y ocultar el botón de inicio
-                    document.getElementById("reader").style.display = "block";
-                    document.getElementById("btnIniciar").style.display = "none";
-                    document.getElementById("btnDetener").style.display = "inline";
+                    document.getElementById("btnIniciar").addEventListener("click", function() {
+                    console.log("✅ Botón 'Activar Cámara' presionado");
+                    iniciarEscaner();
+                    });
+
 
                     // Iniciar el escáner QR
                     scanner.start(
